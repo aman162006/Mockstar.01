@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}AI Career Coach · Mockstar{% endblock %}
+{% block content %}<h1>AI Career Coach</h1><p class="sub">Interview tips, common questions, company research and stress management.</p>
+<div class="card"><div class="chat" id="chat"><div class="msg bot">Hi! Ask me anything about interview preparation.</div></div>
+<div class="row" style="margin:10px 0">{% for s in ['Interview tips','Common questions','Manage stress','Questions to ask'] %}<button class="btn ghost sug">{{ s }}</button>{% endfor %}</div>
+<div class="row"><input id="msg" placeholder="Ask me anything about interview preparation..." style="flex:1"><button class="btn" id="send">Send</button></div></div>{% endblock %}
+{% block scripts %}<script>
+const hist = [];
+function add(role, text) { const d = document.createElement('div'); d.className = 'msg ' + (role === 'user' ? 'user' : 'bot'); d.innerHTML = md(text); $('chat').append(d); $('chat').scrollTop = 1e9; hist.push({role, text}); }
+async function send(t) { t = t.trim(); if (!t) return; $('msg').value = ''; add('user', t);
+  try { add('model', (await post('/api/chat', {message: t, history: hist})).reply); } catch (e) { add('model', e.message); } }
+$('send').onclick = () => send($('msg').value); $('msg').onkeydown = e => e.key === 'Enter' && send($('msg').value);
+document.querySelectorAll('.sug').forEach(b => b.onclick = () => send(b.textContent));
+</script>{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}{% block title %}Interview · Mockstar{% endblock %}
+{% block content %}
+<section id="setup" class="card"><h1>Ready to start your interview?</h1>
+<form id="startForm" enctype="multipart/form-data">
+<label for="jd">Job role or job description</label><textarea id="jd" name="jd" rows="4" required placeholder="e.g. Website Developer, or paste the full job description"></textarea>
+<label for="resume">Resume (PDF or TXT, optional)</label><input id="resume" name="resume" type="file" accept=".pdf,.txt">
+<div class="row"><div style="flex:1"><label for="type">Interview type</label><select id="type" name="type">
+{% for k,(label,n) in types.items() %}<option value="{{ k }}" {{ 'selected' if k==sel }}>{{ label }}</option>{% endfor %}</select></div>
+<div style="flex:1"><label for="difficulty">Difficulty</label><select id="difficulty" name="difficulty">
+{% for d in ['Easy','Medium','Hard'] %}<option {{ 'selected' if d==prefs.get('difficulty','Medium') }}>{{ d }}</option>{% endfor %}</select></div></div>
+<label for="company">Company (optional)</label><input id="company" name="company" placeholder="e.g. Amazon">
+<p><button id="startBtn" class="btn">Start interview</button></p></form></section>
+<section id="live" hidden class="live">
+<div class="card"><div class="row"><span class="badge" id="timer">00:00</span><span class="badge" id="qcount"></span><span class="badge" id="camStatus">Camera: starting</span></div>
+<p class="q" id="question"></p><video id="cam" autoplay muted playsinline></video><canvas id="cv" hidden></canvas>
+<label for="answer">Your answer</label><textarea id="answer" rows="4" placeholder="Type your answer or use the microphone"></textarea>
+<div class="row" style="margin-top:10px"><button class="btn ghost" id="mic" type="button">Speak answer</button>
+<label style="margin:0"><input type="checkbox" id="tts" {{ 'checked' if prefs.get('voice',True) }}>Read questions aloud</label>
+<button class="btn" id="submit" style="margin-left:auto">Submit answer</button><button class="btn danger" id="end" type="button">End interview</button></div></div>
+<div class="card"><h2>Feedback</h2><div id="feedback"><p class="sub">Feedback on each answer appears here.</p></div></div></section>
+{% endblock %}
+{% block scripts %}<script>
+let iid, stream, rec, t0, total, n = 0;
+const speak = t => { if ($('tts').checked && window.speechSynthesis) { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(t)); } };
+function showQ(q) { n++; $('question').textContent = q; $('qcount').textContent = `Question ${n} of ${total}`; $('answer').value = ''; speak(q); }
+$('startForm').onsubmit = async e => {
+  e.preventDefault(); const b = $('startBtn'); b.disabled = true; b.textContent = 'Preparing your interview...';
+  try {
+    const r = await fetch('/api/interview/start', {method: 'POST', body: new FormData(e.target)}); const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    iid = d.id; total = d.total; $('setup').hidden = true; $('live').hidden = false; t0 = Date.now(); showQ(d.question);
+    setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $('timer').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+    try { stream = await navigator.mediaDevices.getUserMedia({video: true}); $('cam').srcObject = stream; $('camStatus').textContent = 'Camera: on'; setInterval(sendFrame, 5000); }
+    catch { $('camStatus').textContent = 'Camera: unavailable'; }
+  } catch (err) { alert(err.message); b.disabled = false; b.textContent = 'Start interview'; }
+};
+async function sendFrame() {
+  const v = $('cam'); if (!v.videoWidth) return; const c = $('cv'); c.width = 320; c.height = 240;
+  c.getContext('2d').drawImage(v, 0, 0, 320, 240);
+  try { const a = await post(`/api/interview/${iid}/frame`, {image: c.toDataURL('image/jpeg', .7)});
+    $('camStatus').textContent = a.face ? `Posture: ${a.posture}` : 'Face not detected'; } catch {}
+}
+$('submit').onclick = async () => {
+  const b = $('submit'); b.disabled = true; window.speechSynthesis && speechSynthesis.cancel();
+  try {
+    const d = await post(`/api/interview/${iid}/answer`, {answer: $('answer').value});
+    const f = document.createElement('div'); f.className = 'fb'; f.innerHTML = `<b>Question ${n}</b><br>${md(d.feedback)}`;
+    if ($('feedback').querySelector('.sub')) $('feedback').innerHTML = ''; $('feedback').prepend(f);
+    if (d.done) await finish(); else showQ(d.next_question);
+  } catch (err) { alert(err.message); } b.disabled = false;
+};
+$('end').onclick = () => confirm('End the interview and generate your report?') && finish();
+async function finish() {
+  $('submit').disabled = $('end').disabled = true; $('feedback').insertAdjacentHTML('afterbegin', '<p class="sub">Generating your report...</p>');
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  const d = await post(`/api/interview/${iid}/finish`, {}); location.href = d.url;
+}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) $('mic').hidden = true; else $('mic').onclick = () => {
+  if (rec) { rec.stop(); return; } rec = new SR(); rec.continuous = true; rec.interimResults = false; rec.lang = 'en-US';
+  const base = $('answer').value; rec.onresult = e => { $('answer').value = (base + ' ' + [...e.results].map(r => r[0].transcript).join(' ')).trim(); };
+  rec.onend = () => { rec = null; $('mic').textContent = 'Speak answer'; }; rec.start(); $('mic').textContent = 'Stop recording';
+};
+</script>{% endblock %}

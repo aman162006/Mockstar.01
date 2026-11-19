@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block title %}History · Mockstar{% endblock %}
+{% block content %}<h1>Interview history</h1>
+{% for r in rows %}<div class="card hist"><b>ID: {{ r.id }}</b> · {{ r.role }}<br>
+{% if r.status=='done' %}Score: {{ r.score }}/10 · {{ r.duration//60 }}:{{ '%02d'|format(r.duration%60) }} minutes<br><br><a class="btn" href="{{ url_for('report', iid=r.id) }}">View full report</a>
+{% else %}<span class="sub">Not finished — no report yet.</span>{% endif %}</div>
+{% else %}<div class="card"><p>No interviews yet.</p><a class="btn" href="{{ url_for('interview') }}">Start your first interview</a></div>{% endfor %}{% endblock %}

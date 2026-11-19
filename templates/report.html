@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Report · Mockstar{% endblock %}
+{% block content %}<h1>Interview performance report</h1>
+<div class="card row"><div class="score">{{ r.score }}<small style="font-size:.9rem">/10</small></div>
+<div><b>Interview #{{ iv.id }}</b><br>Role: {{ iv.role }}<br>Time taken: {{ '%d:%02d'|format(iv.duration//60, iv.duration%60) }} minutes</div>
+<button class="btn ghost" style="margin-left:auto" onclick="print()">Print report</button></div>
+<div class="card"><h2>Summary</h2><p>{{ r.summary }}</p></div>
+<div class="rcols"><div class="card"><h2>Strengths</h2><ul>{% for s in r.strengths %}<li>{{ s }}</li>{% endfor %}</ul></div>
+<div class="card"><h2>Weaknesses</h2><ul>{% for s in r.weaknesses %}<li>{{ s }}</li>{% endfor %}</ul></div></div>
+<div class="card"><h2>Behavioral analysis</h2>{% if cv.frames %}<div class="row">
+<div class="stat"><b>{{ cv.face_presence }}%</b>Face presence</div><div class="stat"><b>{{ cv.eye_contact }}%</b>Eye alignment</div>
+<div class="stat"><b>{{ cv.good_posture }}%</b>Good posture</div></div>{% else %}<p class="sub">No camera frames were captured for this session.</p>{% endif %}</div>
+<div class="card"><h2>Suggestions for improvement</h2><ul>{% for s in r.suggestions %}<li>{{ s }}</li>{% endfor %}</ul>
+<a class="btn ghost" href="{{ url_for('learning') }}">Open the Learning Center</a> <a class="btn ghost" href="{{ url_for('chatbot') }}">Chat with AI Career Coach</a></div>
+<div class="card"><h2>Questions and answers</h2>{% for x in qa %}<p><b>Q{{ loop.index }}. {{ x.q }}</b><br>{{ x.a or '(not answered)' }}</p>
+{% if x.feedback %}<div class="fb">{{ x.feedback }}</div>{% endif %}{% endfor %}</div>{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}Learning Center · Mockstar{% endblock %}
+{% block content %}<h1>AI Learning Center</h1><p class="sub">Generate study material for your target role and topic.</p>
+<div class="live"><div class="card"><label for="role">Target role</label><input id="role" value="Software developer">
+<label for="topic">Topic</label><input id="topic" value="Data Structures"><p class="row">
+{% for t in ['Data Structures','Algorithms','System Design','OOP','Databases','Cloud','Networking','Security'] %}<button type="button" class="btn ghost chip">{{ t }}</button>{% endfor %}</p>
+<button class="btn" id="go">Generate material</button></div>
+<div class="card"><h2 id="title">Study material</h2><div class="md" id="out"><span class="sub">Your material appears here.</span></div></div></div>{% endblock %}
+{% block scripts %}<script>
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => $('topic').value = b.textContent);
+$('go').onclick = async () => { $('go').disabled = true; $('out').textContent = 'Generating...';
+  try { const d = await post('/api/learn', {role: $('role').value, topic: $('topic').value}); $('title').textContent = $('topic').value; $('out').innerHTML = md(d.text); }
+  catch (e) { $('out').textContent = e.message; } $('go').disabled = false; };
+</script>{% endblock %}

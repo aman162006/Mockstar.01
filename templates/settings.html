@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Settings · Mockstar{% endblock %}
+{% block content %}<h1>Settings</h1><p class="sub">Customize your Mockstar interview experience.</p>
+<form method="post" class="card"><h2>Interview preferences</h2>
+{% for k,l in [('technical','Technical interviews'),('behavioral','Behavioral interviews'),('quick','Common questions')] %}
+<label style="font-weight:400"><input type="checkbox" name="types" value="{{ k }}" {{ 'checked' if k in p.get('types',['technical','behavioral','quick']) }}>{{ l }}</label>{% endfor %}
+<label for="difficulty">Difficulty level</label><select id="difficulty" name="difficulty">{% for d in ['Easy','Medium','Hard'] %}<option {{ 'selected' if d==p.get('difficulty','Medium') }}>{{ d }}</option>{% endfor %}</select>
+<h2 style="margin-top:22px">Voice</h2><label style="font-weight:400"><input type="checkbox" name="voice" {{ 'checked' if p.get('voice',True) }}>Read interview questions aloud</label>
+<label for="companies">Companies of interest</label><input id="companies" name="companies" value="{{ p.get('companies','') }}" placeholder="Google, Microsoft, Amazon">
+<label for="roles">Target roles</label><input id="roles" name="roles" value="{{ p.get('roles','') }}" placeholder="Software Engineer, Data Scientist">
+<p><button class="btn">Save settings</button></p></form>{% endblock %}

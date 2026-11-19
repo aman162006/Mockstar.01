@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}AI Quiz · Mockstar{% endblock %}
+{% block content %}<h1>AI quiz challenge</h1><p class="sub">Test your knowledge with AI-generated questions for your target role.</p>
+<div class="card row"><div class="stat"><b id="sA">0</b>Answered</div><div class="stat"><b id="sC">0</b>Correct</div><div class="stat"><b id="sP">0%</b>Accuracy</div></div>
+<div class="card" id="setup"><label for="role">Target role</label><input id="role" value="Software Engineer">
+<label for="diff">Difficulty</label><select id="diff"><option>Easy</option><option selected>Medium</option><option>Hard</option></select>
+<p><button class="btn" id="go">Start quiz</button></p></div>
+<div class="card" id="box" hidden><p class="q" id="qq"></p><div id="opts"></div><p id="exp" class="fb" hidden></p>
+<button class="btn" id="next" hidden>Next question</button> <button class="btn ghost" id="stop">End quiz</button></div>{% endblock %}
+{% block scripts %}<script>
+let a = 0, c = 0, cur;
+async function load() {
+  $('exp').hidden = $('next').hidden = true; $('qq').textContent = 'Generating question...'; $('opts').innerHTML = '';
+  cur = await (await fetch(`/api/quiz?role=${encodeURIComponent($('role').value)}&difficulty=${$('diff').value}`)).json();
+  $('qq').textContent = cur.question;
+  cur.options.forEach((o, i) => { const b = document.createElement('button'); b.className = 'opt'; b.textContent = 'ABCD'[i] + '. ' + o; b.onclick = () => pick(i); $('opts').append(b); });
+}
+function pick(i) {
+  const bs = [...$('opts').children]; if (bs[0].disabled) return; bs.forEach(b => b.disabled = true);
+  bs[cur.answer].classList.add('right'); if (i !== cur.answer) bs[i].classList.add('wrong');
+  a++; if (i === cur.answer) c++; $('sA').textContent = a; $('sC').textContent = c; $('sP').textContent = Math.round(100 * c / a) + '%';
+  $('exp').textContent = cur.explanation; $('exp').hidden = $('next').hidden = false;
+}
+$('go').onclick = () => { $('setup').hidden = true; $('box').hidden = false; load(); };
+$('next').onclick = load; $('stop').onclick = () => { $('box').hidden = true; $('setup').hidden = false; };
+</script>{% endblock %}

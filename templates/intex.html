@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block content %}
+<h1>Master your next interview with Mockstar</h1><p class="sub">An AI-powered mock interview platform that helps you prepare with confidence.</p>
+<div class="card hero"><h2>Ready to prepare?</h2><p>Start a new interview and get real-time AI feedback on your answers and body language.</p>
+<a class="btn" href="{{ url_for('interview') }}">Start interview</a></div>
+<h2>Select your interview type</h2><div class="grid">
+{% for k,(label,n) in types.items() %}<a class="tcard" href="{{ url_for('interview', type=k) }}"><b>{{ label }}</b>
+<p class="sub">{{ {'technical':'Practice coding questions and system design','behavioral':'Practice the STAR method and soft skills','quick':'Short practice session with common questions'}[k] }}</p>
+<span class="tag {{ {'technical':'Hard','behavioral':'Medium','quick':'Easy'}[k] }}">{{ {'technical':'Hard','behavioral':'Medium','quick':'Easy'}[k] }}</span> {{ n }} questions</a>{% endfor %}</div>{% endblock %}
